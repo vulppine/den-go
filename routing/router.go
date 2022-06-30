@@ -148,7 +148,7 @@ func (r *Router) preProcessRequest(ctx *routingContext, req *http.Request) error
 func (r *Router) handleRequest(ctx *routingContext, req *http.Request) (*ResponseInfo, error) {
 	info := NewRequestInfo(req)
 
-	if handler, err := r.getRouteHandler(info.RequestEndpoint); err == nil {
+	if handler, err := r.getRouteHandler(info.requestEndpoint); err == nil {
 		resp, err := handler.HandleRequest(info)
 
 		if err != nil {

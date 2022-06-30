@@ -34,8 +34,8 @@ func (t *testRoute) ProcessRequest(req *http.Request) error {
 }
 
 func (t *testRoute) HandleRequest(req *RequestInfo) (*ResponseInfo, error) {
-	if req.RequestEndpoint != t.endpoint {
-		return nil, fmt.Errorf("endpoint did not match route endpoint: expected %s, got %s", t.endpoint, req.RequestEndpoint)
+	if req.requestEndpoint != t.endpoint {
+		return nil, fmt.Errorf("endpoint did not match route endpoint: expected %s, got %s", t.endpoint, req.requestEndpoint)
 	}
 
 	if req.Method() != t.method {

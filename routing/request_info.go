@@ -19,7 +19,7 @@ type RequestInfo struct {
 
 	// Request endpoint that this request is fetching information from. This is either
 	// from the subdomain, or from the first section of the path given in the request's URI.
-	RequestEndpoint string
+	requestEndpoint string
 
 	Path []string // should be its own API because golang doesn't have a neat path thing but oh well?
 
@@ -36,6 +36,10 @@ func NewRequestInfo(req *http.Request) *RequestInfo {
 	info.getInfoFromUrl(req.URL)
 
 	return &info
+}
+
+func (i *RequestInfo) RequestEndpoint() string {
+	return i.requestEndpoint
 }
 
 // Method exposes the HTTP request method to the caller.
@@ -64,10 +68,10 @@ func (i *RequestInfo) getInfoFromUrl(rawUrl *url.URL) {
 	p := strings.Split(strings.Trim(rawUrl.EscapedPath(), "/"), "/")
 
 	if len(h) <= 2 {
-		i.RequestEndpoint = p[0]
+		i.requestEndpoint = p[0]
 		i.Path = p[1:]
 	} else {
-		i.RequestEndpoint = h[0]
+		i.requestEndpoint = h[0]
 		i.Path = p
 	}
 
