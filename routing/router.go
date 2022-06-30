@@ -128,25 +128,32 @@ func (r *Router) getResponseProcessors(responseType ResponseType, endpoint strin
 	return nil, errors.New("no handlers registered for this method")
 }
 
-func (r *Router) preProcessRequest(req *http.Request) error {
+func (r *Router) preProcessRequest(ctx *routingContext, req *http.Request) error {
 	var err error
 	if handler, err := r.getRequestProcessors(req.Method); err == nil {
 		for _, h := range handler {
 			err := h.ProcessRequest(req)
 			if err != nil {
-				return err
+				ctx.CloseWithError(err)
 			}
 		}
+	} else {
+		ctx.CloseWithError(err)
+		return err
 	}
 
 	return err
 }
 
-func (r *Router) handleRequest(req *http.Request) (*ResponseInfo, error) {
+func (r *Router) handleRequest(ctx *routingContext, req *http.Request) (*ResponseInfo, error) {
 	info := NewRequestInfo(req)
 
 	if handler, err := r.getRouteHandler(info.RequestEndpoint); err == nil {
 		resp, err := handler.HandleRequest(info)
+
+		if err != nil {
+			ctx.CloseWithError(err)
+		}
 
 		return resp, err
 	}
@@ -155,11 +162,12 @@ func (r *Router) handleRequest(req *http.Request) (*ResponseInfo, error) {
 	return nil, errors.New("could not find endpoint")
 }
 
-func (r *Router) processResponse(resp *ResponseInfo) (*ResponseData, error) {
+func (r *Router) processResponse(ctx *routingContext, resp *ResponseInfo) (*ResponseData, error) {
 	if handlers, err := r.getResponseProcessors(resp.ResponseType(), resp.endpoint); err == nil {
 		for _, h := range handlers {
 			err := h.ProcessResponse(resp)
 			if err != nil {
+				ctx.CloseWithError(err)
 				return nil, err
 			}
 		}
@@ -187,11 +195,11 @@ func (r *Router) processRequest(ctx *routingContext, w http.ResponseWriter, req 
 	var err error
 	switch ctx.stage {
 	case initial:
-		err = r.preProcessRequest(req)
+		err = r.preProcessRequest(ctx, req)
 	case routing:
-		ctx.info, err = r.handleRequest(req)
+		ctx.info, err = r.handleRequest(ctx, req)
 	case postProcess:
-		ctx.data, err = r.processResponse(ctx.info)
+		ctx.data, err = r.processResponse(ctx, ctx.info)
 	case send:
 		ctx.data.send(w)
 	}

@@ -2,6 +2,7 @@ package routing
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -47,6 +48,42 @@ func (t *testRoute) HandleRequest(req *RequestInfo) (*ResponseInfo, error) {
 		responseType: t.responseType,
 		endpoint:     t.endpoint,
 		Body:         bytes.NewBufferString(t.body),
+	}, nil
+}
+
+type alwaysError struct {
+	onResponse bool
+	onRoute    bool
+	onRequest  bool
+}
+
+func (a *alwaysError) ProcessResponse(*ResponseInfo) error {
+	if a.onResponse {
+		return errors.New("error on response")
+	}
+
+	return nil
+}
+
+func (a *alwaysError) ProcessRequest(*http.Request) error {
+	if a.onRequest {
+		return errors.New("error on request")
+	}
+
+	return nil
+}
+
+func (a *alwaysError) HandleRequest(*RequestInfo) (*ResponseInfo, error) {
+	if a.onRoute {
+		return nil, errors.New("error on route")
+	}
+
+	return &ResponseInfo{
+		code:         http.StatusOK,
+		Headers:      nil,
+		responseType: None,
+		endpoint:     "",
+		Body:         nil,
 	}, nil
 }
 
@@ -195,4 +232,30 @@ func TestRouter_processRequest(t *testing.T) {
 	if s.String() != "Hello, world!" {
 		t.Fatalf("expected Hello, world! in final body, got %s", s.String())
 	}
+}
+
+func TestRouter_processRequestWithErrors(t *testing.T) {
+	router := new(Router)
+
+	handler := new(alwaysError)
+	handler.onRequest = true
+
+	router.RegisterRequestProcessor(http.MethodGet, handler)
+
+	ctx := newRoutingContext()
+	req := new(http.Request)
+	req.Method = http.MethodGet
+	writer := new(dummyWriter)
+
+	advance := func() {
+		select {
+		case <-ctx.Done():
+			return
+		case <-ctx.stageChan:
+			t.Fatalf("expected error, got success")
+		}
+	}
+
+	router.processRequest(ctx, writer, req)
+	advance()
 }

@@ -16,6 +16,7 @@ type routingContext struct {
 func newRoutingContext() *routingContext {
 	ctx := new(routingContext)
 	ctx.stageChan = make(chan routeStage, 1)
+	ctx.done = make(chan struct{}, 1)
 
 	return ctx
 }
@@ -28,6 +29,11 @@ func (c *routingContext) upgradeStage() {
 	c.stageChan <- c.stage + 1
 }
 
+// CloseWithError indicates that a routing function has hit a critical error,
+// and needs to finish the client's session immediately. Currently, this sends
+// a generic 500 error to the client, with the given error as the body.
+//
+// Further context errors are ignored.
 func (c *routingContext) CloseWithError(err error) {
 	if c.err != nil {
 		return
