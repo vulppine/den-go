@@ -240,3 +240,7 @@ func (r *Router) RouteRequest(w http.ResponseWriter, req *http.Request) {
 		}
 	}
 }
+
+func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	r.RouteRequest(w, req)
+}
