@@ -28,6 +28,16 @@ type Router struct {
 	responseProcessors map[ResponseType]responseProcessors
 }
 
+func NewRouter() *Router {
+	router := new(Router)
+
+	router.routes = make(map[string]RouteHandler)
+	router.requestProcessors = make(map[string][]RequestProcessor)
+	router.responseProcessors = make(map[ResponseType]responseProcessors)
+
+	return router
+}
+
 // ChunkSize dictates how many bytes to write to the client
 // while sending the final chunk of ResponseData. This should
 // be user configurable in the future.
@@ -111,9 +121,10 @@ func (r *Router) getRouteHandler(endpoint string) (RouteHandler, error) {
 func (r *Router) getRequestProcessors(method string) ([]RequestProcessor, error) {
 	if handlers, ok := r.requestProcessors[method]; ok {
 		return handlers, nil
+	} else {
+		r.requestProcessors[method] = make([]RequestProcessor, 0)
+		return r.requestProcessors[method], nil
 	}
-
-	return nil, errors.New("could not retrieve handlers")
 }
 
 func (r *Router) getResponseProcessors(responseType ResponseType, endpoint string) ([]ResponseProcessor, error) {
@@ -222,7 +233,7 @@ func (r *Router) processRequest(ctx *routingContext, w http.ResponseWriter, req 
 // the context is cancelled (most likely due to an error), or until the 'finish'
 // stage is reached in the routing state.
 func (r *Router) RouteRequest(w http.ResponseWriter, req *http.Request) {
-	ctx := new(routingContext)
+	ctx := newRoutingContext()
 
 	// loop through until the route reaches the final state
 	// even with an error, it will always reach the final state
