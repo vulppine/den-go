@@ -97,3 +97,44 @@ func TestFileHandler_HandleRequest(t *testing.T) {
 		t.Fatalf("expected Hello, world! as body, got %s", s.String())
 	}
 }
+
+// ugh, copy and paste test sucks: TODO actually have some facilities for
+// common testing structs and stuff
+func TestFileHandler_HandleRequestWithRelativePathing(t *testing.T) {
+	dir := t.TempDir()
+	testFile := filepath.Join(dir, "test_file")
+	file, err := os.Create(testFile)
+
+	if err != nil {
+		t.Fatalf("error upon creating file: %s", err)
+	}
+
+	_, err = file.WriteString("Hello, world!")
+
+	if err != nil {
+		t.Fatalf("error upon write: %s", err)
+	}
+
+	f := NewFileHandler(dir)
+
+	router := routing.NewRouter()
+	router.RegisterRoute("test", f)
+	testUrl, _ := url.Parse("https://test.org/test/../../../")
+
+	req := &http.Request{
+		Method: http.MethodGet,
+		URL:    testUrl,
+	}
+
+	w := new(dummyWriter)
+
+	router.RouteRequest(w, req)
+
+	var s strings.Builder
+
+	s.Write(w.final)
+
+	if w.code != http.StatusForbidden || len(w.final) == 0 {
+		t.Fatalf("expected http.StatusForbidden with filled buffer, got code %d and body %s", w.code, s.String())
+	}
+}

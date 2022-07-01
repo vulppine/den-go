@@ -66,16 +66,16 @@ func NewFileHandler(path string) *FileHandler {
 }
 
 func (f *FileHandler) HandleRequest(req *routing.RequestInfo) (*routing.ResponseInfo, error) {
+	path := filepath.FromSlash(strings.Join(req.Path, "/"))
+
 	if req.Method() != http.MethodGet {
-		err := newFileHandlerError(invalidMethod, "", nil)
+		err := newFileHandlerError(invalidMethod, path, nil)
 		text := bytes.NewBufferString(err.Error())
 
 		resp := routing.CreateResponseInfo(http.StatusBadRequest, http.Header{}, routing.Text, req.RequestEndpoint(), text)
 
 		return &resp, nil
 	}
-
-	path := filepath.Join(f.basePath, filepath.FromSlash(strings.Join(req.Path, "/")))
 
 	file, err := f.getFileAtPath(path)
 
@@ -108,7 +108,9 @@ func (f *FileHandler) getFileAtPath(path string) (*os.File, error) {
 		return nil, newFileHandlerError(notAllowed, path, errors.New("relative file pathing not allowed"))
 	}
 
-	file, err := os.Open(path)
+	fullPath := filepath.Join(f.basePath, path)
+
+	file, err := os.Open(fullPath)
 	if err != nil {
 		return nil, newFileHandlerError(accessError, path, err)
 	}
