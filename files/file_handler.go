@@ -5,6 +5,7 @@ import (
 	"den/routing"
 	"errors"
 	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -87,7 +88,16 @@ func (f *FileHandler) HandleRequest(req *routing.RequestInfo) (*routing.Response
 		case notAllowed:
 			code = http.StatusForbidden
 		case accessError:
-			code = http.StatusBadRequest // TODO: fs Err matching
+			switch {
+			case errors.Is(err, fs.ErrNotExist):
+				code = http.StatusNotFound
+			case errors.Is(err, fs.ErrPermission):
+				code = http.StatusForbidden
+			default:
+				// something really odd happened, so
+				// it might be a server-side thing
+				code = http.StatusServiceUnavailable
+			}
 		}
 
 		text := bytes.NewBufferString(e.Error())
