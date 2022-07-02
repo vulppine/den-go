@@ -47,6 +47,10 @@ const (
 	// EndpointRoot indicates that the endpoint reached is
 	// the root of the website, or the empty string.
 	EndpointRoot = ""
+	// EndpointDefault indicates that the endpoint that was given
+	// is not registered, so it will instead attempt to use the
+	// default endpoint handler.
+	EndpointDefault = "___DEFAULT___"
 
 	// EndpointError indicates that an error occurred during data
 	// processing internally, and that the resultant data will
@@ -112,6 +116,8 @@ func (r *Router) RegisterResponseProcessor(responseType ResponseType, endpoint s
 
 func (r *Router) getRouteHandler(endpoint string) (RouteHandler, error) {
 	if handler, ok := r.routes[endpoint]; ok {
+		return handler, nil
+	} else if handler, ok := r.routes[EndpointDefault]; ok {
 		return handler, nil
 	}
 
