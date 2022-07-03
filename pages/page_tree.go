@@ -6,16 +6,36 @@ type pageTree struct {
 	root pageNode
 }
 
+func (t *pageTree) getHandler(path []string) (PageNodeHandler, []string) {
+	n := &t.root
+
+	for n.HasChildren() {
+		c := n.Child(path[0])
+		if c == nil {
+			return nil, path
+		}
+
+		n = c
+		path = path[1:]
+	}
+
+	return n.handler, path
+}
+
 type pageNode struct {
 	// id of this node
 	id string
 	// children in this node as a map keyed by string, with values of itself:
 	// if this node has a handler, this will be nil
-	children map[string]pageNode
+	children map[string]*pageNode
 	// the handler of this node: if this node has children, this is always nil
 	// adding children will always turn this into a nil value, but adding a handler
 	// will never work if the node has children
 	handler PageNodeHandler
+}
+
+func (n *pageNode) HasChildren() bool {
+	return n.children != nil
 }
 
 func (n *pageNode) Handler() PageNodeHandler {
@@ -29,20 +49,26 @@ func (n *pageNode) Child(key string) *pageNode {
 	}
 
 	if node, ok := n.children[key]; ok {
-		return &node
+		return node
 	}
 
 	return nil
 }
 
 // Add adds a new child to the given page node.
-func (n *pageNode) Add(key string) {
+func (n *pageNode) Add(key string) *pageNode {
 	if n.handler != nil {
 		n.handler = nil
-		n.children = make(map[string]pageNode)
 	}
 
-	n.children[key] = pageNode{id: key}
+	if n.children == nil {
+		n.children = make(map[string]*pageNode)
+	}
+
+	node := &pageNode{id: key}
+	n.children[key] = node
+
+	return node
 }
 
 // SetHandler sets the handler to the given handler.
