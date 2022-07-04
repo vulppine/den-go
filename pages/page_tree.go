@@ -22,6 +22,26 @@ func (t *pageTree) getHandler(path []string) (PageNodeHandler, []string) {
 	return n.handler, path
 }
 
+func (t *pageTree) addPath(path []string, handler PageNodeHandler) {
+	if len(path) == 0 {
+		return
+	}
+
+	n := &t.root
+
+	for len(path) > 0 {
+		if v, ok := n.children[path[0]]; !ok {
+			n = n.add(path[0])
+		} else {
+			n = v
+		}
+
+		path = path[1:]
+	}
+
+	n.handler = handler
+}
+
 type pageNode struct {
 	// id of this node
 	id string
