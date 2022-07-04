@@ -22,9 +22,9 @@ func (d *dummyPageNodeHandler) AllPages() ([]string, error) {
 func TestPageTreeTraversal(t *testing.T) {
 	tree := new(pageTree)
 
-	a := tree.root.Add("a")
-	b := a.Add("b")
-	c := tree.root.Add("c")
+	a := tree.root.add("a")
+	b := a.add("b")
+	c := tree.root.add("c")
 
 	handlerB := new(dummyPageNodeHandler)
 	handlerB.toReturn = "b"
@@ -32,8 +32,8 @@ func TestPageTreeTraversal(t *testing.T) {
 	handlerC := new(dummyPageNodeHandler)
 	handlerC.toReturn = "c"
 
-	b.SetHandler(handlerB)
-	c.SetHandler(handlerC)
+	b.setHandler(handlerB)
+	c.setHandler(handlerC)
 
 	testValues := []struct {
 		path  []string

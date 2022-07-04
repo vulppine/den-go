@@ -9,8 +9,8 @@ type pageTree struct {
 func (t *pageTree) getHandler(path []string) (PageNodeHandler, []string) {
 	n := &t.root
 
-	for n.HasChildren() {
-		c := n.Child(path[0])
+	for n.hasChildren() {
+		c := n.child(path[0])
 		if c == nil {
 			return nil, path
 		}
@@ -34,16 +34,12 @@ type pageNode struct {
 	handler PageNodeHandler
 }
 
-func (n *pageNode) HasChildren() bool {
+func (n *pageNode) hasChildren() bool {
 	return n.children != nil
 }
 
-func (n *pageNode) Handler() PageNodeHandler {
-	return n.handler
-}
-
-// Child gets a child from the given page node.
-func (n *pageNode) Child(key string) *pageNode {
+// child gets a child from the given page node.
+func (n *pageNode) child(key string) *pageNode {
 	if n.children == nil {
 		return nil
 	}
@@ -55,8 +51,19 @@ func (n *pageNode) Child(key string) *pageNode {
 	return nil
 }
 
-// Add adds a new child to the given page node.
-func (n *pageNode) Add(key string) *pageNode {
+// allChildren gets all children from the node into a slice of pageNode pointers.
+func (n *pageNode) allChildren() []*pageNode {
+	res := make([]*pageNode, 1)
+
+	for _, v := range n.children {
+		res = append(res, v)
+	}
+
+	return res
+}
+
+// add will add a new child to the given page node.
+func (n *pageNode) add(key string) *pageNode {
 	if n.handler != nil {
 		n.handler = nil
 	}
@@ -71,8 +78,8 @@ func (n *pageNode) Add(key string) *pageNode {
 	return node
 }
 
-// SetHandler sets the handler to the given handler.
-func (n *pageNode) SetHandler(handler PageNodeHandler) {
+// setHandler sets the handler to the given handler.
+func (n *pageNode) setHandler(handler PageNodeHandler) {
 	if n.children != nil {
 		return
 	}
