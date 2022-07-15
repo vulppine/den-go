@@ -12,6 +12,10 @@ type MultiPageNodeHandler struct {
 	pages map[string]io.Reader
 }
 
+func (m *MultiPageNodeHandler) Add(path string, reader io.Reader) {
+	m.pages[path] = reader
+}
+
 func (m *MultiPageNodeHandler) Page(path []string) (io.Reader, error) {
 	if v, ok := m.pages[strings.Join(path, "/")]; ok {
 		return v, nil
